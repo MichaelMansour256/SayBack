@@ -1,11 +1,9 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import {
-  Mic,
   Headphones,
-  Volume2,
-  Play,
   ArrowRight,
   Info,
   ShieldCheck,
@@ -17,9 +15,15 @@ export function HomeScreen() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 safe-area">
       <div className="w-full max-w-md glass-card px-6 py-10 text-center space-y-6">
-        <div className="flex items-center justify-center gap-2 text-violet-400">
-          <Mic className="h-8 w-8" aria-hidden="true" />
-          <span className="text-3xl font-display font-bold tracking-tight">SAYBACK</span>
+        <div className="flex items-center justify-center">
+          <Image
+            src="/icons/sayback-logo.svg"
+            alt="SayBack"
+            width={280}
+            height={80}
+            className="w-64 h-auto"
+            priority
+          />
         </div>
 
         <p className="text-cyan-300 text-sm font-medium tracking-wider uppercase">

@@ -6,9 +6,8 @@ export const metadata: Metadata = {
   title: 'SayBack — Hear it backwards. Say it back!',
   description: 'A mobile-first reverse-audio party game. Record, reverse, imitate, guess.',
   icons: [
-    { rel: 'icon', type: 'image/png', sizes: '32x32', url: '/icons/favicon-32x32.svg' },
-    { rel: 'icon', type: 'image/png', sizes: '16x16', url: '/icons/favicon-16x16.svg' },
-    { rel: 'apple-touch-icon', sizes: '180x180', url: '/icons/apple-touch-icon.svg' },
+    { rel: 'icon', type: 'image/svg+xml', url: '/icons/sayback-icon.svg' },
+    { rel: 'apple-touch-icon', sizes: '180x180', url: '/icons/sayback-icon.svg' },
   ],
   openGraph: {
     title: 'SayBack',

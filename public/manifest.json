@@ -12,30 +12,20 @@
   "categories": ["games", "entertainment"],
   "icons": [
     {
-      "src": "/icons/icon-192.svg",
+      "src": "/icons/sayback-icon.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.svg",
+      "src": "/icons/sayback-icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/apple-touch-icon.svg",
+      "src": "/icons/sayback-icon.svg",
       "sizes": "180x180",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/icons/favicon-32x32.svg",
-      "sizes": "32x32",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/icons/favicon-16x16.svg",
-      "sizes": "16x16",
       "type": "image/svg+xml"
     }
   ],
@@ -46,7 +36,7 @@
       "short_name": "Play",
       "url": "/game",
       "description": "Begin a new reverse-audio round",
-      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icons/sayback-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]
 }
