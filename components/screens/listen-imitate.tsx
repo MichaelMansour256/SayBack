@@ -11,17 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Waveform } from '@/components/ui/waveform';
-import {
-  Mic,
-  StopCircle,
-  RefreshCw,
-  Play,
-  Volume2,
-  ArrowRight,
-  AlertCircle,
-  Headphones,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Mic, StopCircle, RefreshCw, Play, Volume2, ArrowRight, AlertCircle, Headphones } from 'lucide-react';
 
 type Stage = 'reversed' | 'recording' | 'reconstructed';
 
@@ -32,48 +22,26 @@ export function ListenImitateScreen({ stage }: { stage: Stage }) {
     recordImitation,
     finishImitation,
     playClip,
-    stopPlayback,
-    replayAllowed,
-    incrementPlay,
     retryCurrentRecording,
     error,
-    getClip,
   } = useGame();
 
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [, setTick] = useState(0);
   const state = machine.state;
-
   const isProcessing = state === 'processing-original' || state === 'processing-imitation';
+  const elapsed = engine?.getElapsedMs() ?? 0;
 
-  const reversedClip = getClip(machine.round?.reversedClipId ?? null);
-  const reconstructedClip = getClip(machine.round?.reconstructedClipId ?? null);
-  const elapsed = engine?.getElapsedMs() ?? 0; const [, setTick] = useState(0); useEffect(() => { if (state !== 'recording-imitation') return; const t = setInterval(() => setTick((x) => x + 1), 250); return () => clearInterval(t); }, [state]);
+  useEffect(() => {
+    if (state !== 'recording-imitation') return;
+    const t = setInterval(() => setTick((x) => x + 1), 250);
+    return () => clearInterval(t);
+  }, [state]);
 
   const formatTime = (ms: number) => {
     const s = Math.floor(ms / 1000);
     const m = Math.floor(s / 60);
     return `${m}:${(s % 60).toString().padStart(2, '0')}`;
-  };
-
-  const handlePlayReversed = async () => {
-    if (!replayAllowed('reversed')) return;
-    await playClip(machine.round?.reversedClipId ?? null);
-    incrementPlay('reversed');
-  };
-
-  const handlePlayReconstructed = async () => {
-    if (!replayAllowed('reconstructed')) return;
-    await playClip(machine.round?.reconstructedClipId ?? null);
-    incrementPlay('reconstructed');
-  };
-
-  const handleRecordImitation = async () => {
-    setConfirmDiscard(false);
-    await recordImitation();
-  };
-
-  const handleStopImitation = async () => {
-    await finishImitation();
   };
 
   if (isProcessing) {
@@ -95,17 +63,17 @@ export function ListenImitateScreen({ stage }: { stage: Stage }) {
 
   const title =
     stage === 'reversed'
-      ? 'Listen to the Reversed Original'
+      ? 'Player B — Listen'
       : stage === 'recording'
-        ? 'Record Your Imitation'
-        : 'Listen to the Reconstructed';
+        ? 'Player B — Imitate'
+        : 'Listen to the Result';
 
   const hint =
     stage === 'reversed'
-      ? "Player B: listen closely to the reversed audio. You can replay it a few times."
+      ? "Listen to the reversed recording. Replay it as many times as you need, then imitate the sound."
       : stage === 'recording'
-        ? "Imitate the sound you heard. We'll reverse it to reconstruct the original."
-        : "Player B: this is what your imitation sounds like reversed — does it resemble the secret word?";
+        ? "Record your best imitation of the reversed sound you just heard."
+        : "This is your imitation reversed. Does it sound like the original word?";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 safe-area">
@@ -125,28 +93,17 @@ export function ListenImitateScreen({ stage }: { stage: Stage }) {
           <CardContent className="space-y-4">
             {stage === 'reversed' && (
               <div className="space-y-3">
-                <p className="text-xs text-white/60">
-                  Replays left:
-                  {' '}
-                  <span className="font-mono font-bold text-violet-300">
-                    {machine.reversedPlays}/{machine.config.maxReversedPlays}
-                  </span>
-                </p>
                 <Button
-                  onClick={handlePlayReversed}
+                  onClick={() => void playClip(machine.round?.reversedClipId ?? null)}
                   variant="reverse"
-                  disabled={engine?.isPlaying() || !replayAllowed('reversed')}
+                  disabled={engine?.isPlaying()}
                   className="w-full"
                 >
                   <Play className="h-5 w-5 mr-2" aria-hidden="true" />
-                  Play Reversed Original
+                  Play Reversed Recording
                 </Button>
-                <p className="text-xs text-white/60">
-                  Listen as many times as you like, then record Player
-                  B&apos;s imitation of the reversed sound.
-                </p>
                 <Button
-                  onClick={handleRecordImitation}
+                  onClick={() => void recordImitation()}
                   variant="record"
                   size="lg"
                   className="w-full"
@@ -166,7 +123,7 @@ export function ListenImitateScreen({ stage }: { stage: Stage }) {
                   <Waveform samples={null} active={true} />
                 </div>
                 <Button
-                  onClick={handleStopImitation}
+                  onClick={() => void finishImitation()}
                   variant="destructive"
                   size="lg"
                   className="w-full"
@@ -174,57 +131,39 @@ export function ListenImitateScreen({ stage }: { stage: Stage }) {
                   <StopCircle className="h-6 w-6 mr-2" aria-hidden="true" />
                   Stop Imitation
                 </Button>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => { if (!confirmDiscard) { setConfirmDiscard(true); return; } setConfirmDiscard(false); void retryCurrentRecording(); }}
-                    disabled={!confirmDiscard}
-                    className="flex-1"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" aria-hidden="true" />
-                    Retry
-                  </Button>
-                </div>
-                {confirmDiscard && (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-xs text-red-300 text-center">
-                    Discarding your imitation. Tap Retry again to confirm.
-                  </div>
-                )}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!confirmDiscard) { setConfirmDiscard(true); return; }
+                    setConfirmDiscard(false);
+                    void retryCurrentRecording();
+                  }}
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" aria-hidden="true" />
+                  {confirmDiscard ? 'Tap again to confirm' : 'Retry'}
+                </Button>
               </div>
             )}
 
             {stage === 'reconstructed' && (
               <div className="space-y-3">
-                <p className="text-xs text-white/60">
-                  Replays left:
-                  {' '}
-                  <span className="font-mono font-bold text-cyan-300">
-                    {machine.reconstructedPlays}/{machine.config.maxReconstructedPlays}
-                  </span>
-                </p>
                 <Button
-                  onClick={handlePlayReconstructed}
+                  onClick={() => void playClip(machine.round?.reconstructedClipId ?? null)}
                   variant="play"
-                  disabled={
-                    engine?.isPlaying() || !replayAllowed('reconstructed')
-                  }
+                  disabled={engine?.isPlaying()}
                   className="w-full"
                 >
                   <Volume2 className="h-5 w-5 mr-2" aria-hidden="true" />
-                  Play Reconstructed
+                  Play Result
                 </Button>
-                <p className="text-xs text-white/60">
-                  When ready, continue to guess the original word.
-                </p>
                 <Button
                   variant="reverse"
                   size="lg"
                   className="w-full"
-                  onClick={() => {
-                    machine.transition('guessing');
-                  }}
+                  onClick={() => machine.transition('guessing')}
                 >
-                  Guess the Word <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
+                  Make Your Guess <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
                 </Button>
               </div>
             )}
@@ -235,9 +174,7 @@ export function ListenImitateScreen({ stage }: { stage: Stage }) {
           <Card className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-400 mt-0.5" aria-hidden="true" />
-              <div>
-                <p className="font-medium text-red-300">{error.message}</p>
-              </div>
+              <p className="font-medium text-red-300">{error.message}</p>
             </div>
           </Card>
         )}

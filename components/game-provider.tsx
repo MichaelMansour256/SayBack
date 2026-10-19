@@ -3,12 +3,7 @@
 import {
   createGameMachine,
   GameMachine,
-  GameConfig,
-  Difficulty,
-  WordMode,
   AudioError,
-  createRound,
-  pickPresetWord,
 } from '@/lib/game';
 import {
   createAudioEngine,
@@ -32,33 +27,24 @@ interface GameContextValue {
   clips: Map<string, AudioClip>;
   getClip: (id: string | null) => AudioClip | undefined;
   storeClip: (clip: AudioClip) => string;
-  startRound: (config: GameConfig, secretAnswer: string | null) => void;
+  startRound: () => void;
   requestMicAndRecord: () => Promise<void>;
   finishOriginal: () => Promise<void>;
   recordImitation: () => Promise<void>;
   finishImitation: () => Promise<void>;
   playClip: (id: string | null) => Promise<void>;
   stopPlayback: () => void;
-  submitGuessAndReveal: (guess: string) => void;
-  revealWithoutGuess: () => void;
-  selfReport: (correct: boolean) => void;
+  revealAnswer: () => void;
   retryCurrentRecording: () => Promise<void>;
   discardAndRestart: () => void;
   backHome: () => void;
   error: AudioError | null;
-  replayAllowed: (kind: 'reversed' | 'reconstructed') => boolean;
-  incrementPlay: (kind: 'reversed' | 'reconstructed') => void;
-  resetPlays: () => void;
   clearError: () => void;
 }
 
 const gameContext = createContext<GameContextValue | null>(null);
 
-interface GameProviderProps {
-  children: React.ReactNode;
-}
-
-export function GameProvider({ children }: GameProviderProps) {
+export function GameProvider({ children }: { children: React.ReactNode }) {
   const machineRef = useRef<GameMachine | null>(null);
   const engineRef = useRef<AudioEngine | null>(null);
   const clipsRef = useRef<Map<string, AudioClip>>(new Map());
@@ -75,14 +61,10 @@ export function GameProvider({ children }: GameProviderProps) {
     if (!m) return;
     if (!engineRef.current) engineRef.current = createAudioEngine();
     setEngineReady(true);
-    const unsub = m.subscribe(() => {
-      setVersion((v) => v + 1);
-    });
+    const unsub = m.subscribe(() => setVersion((v) => v + 1));
 
     const handleVisibility = () => {
-      if (document.hidden) {
-        engineRef.current?.stopPlayback();
-      }
+      if (document.hidden) engineRef.current?.stopPlayback();
     };
     document.addEventListener('visibilitychange', handleVisibility, { passive: true });
 
@@ -110,22 +92,17 @@ export function GameProvider({ children }: GameProviderProps) {
     (next: Parameters<GameMachine['transition']>[0]) => {
       try {
         if (m.canTransition(next)) m.transition(next);
-      } catch {
-        /* UI guards primary flow */
-      }
+      } catch { /* UI guards primary flow */ }
     },
     [m],
   );
 
-  const startRound = useCallback(
-    (config: GameConfig, secretAnswer: string | null) => {
-      clips.clear();
-      engineRef.current?.stopPlayback();
-      engineRef.current?.abortRecording();
-      m.startNewRound(config, secretAnswer);
-    },
-    [m, clips],
-  );
+  const startRound = useCallback(() => {
+    clips.clear();
+    engineRef.current?.stopPlayback();
+    engineRef.current?.abortRecording();
+    m.startNewRound();
+  }, [m, clips]);
 
   const requestMicAndRecord = useCallback(async () => {
     const eng = engineRef.current;
@@ -155,10 +132,7 @@ export function GameProvider({ children }: GameProviderProps) {
       const originalId = storeClip(original);
       const reversed = eng.reverseClip(original);
       storeClip(reversed);
-      m.updateRound({
-        originalClipId: originalId,
-        reversedClipId: reversed.id,
-      });
+      m.updateRound({ originalClipId: originalId, reversedClipId: reversed.id });
       safeTransition('listening-to-reversed');
     } catch (err) {
       if (err instanceof AudioErrorExt) {
@@ -193,10 +167,7 @@ export function GameProvider({ children }: GameProviderProps) {
       const imitationId = storeClip(imitation);
       const reconstructed = eng.reverseClip(imitation);
       storeClip(reconstructed);
-      m.updateRound({
-        imitationClipId: imitationId,
-        reconstructedClipId: reconstructed.id,
-      });
+      m.updateRound({ imitationClipId: imitationId, reconstructedClipId: reconstructed.id });
       safeTransition('listening-to-reconstructed');
     } catch (err) {
       if (err instanceof AudioErrorExt) {
@@ -207,44 +178,25 @@ export function GameProvider({ children }: GameProviderProps) {
     }
   }, [m, storeClip, safeTransition]);
 
-  const playClip = useCallback(
-    async (id: string | null) => {
-      const eng = engineRef.current;
-      if (!eng) return;
-      const clip = getClip(id);
-      if (!clip) return;
-      try {
-        await eng.play(clip);
-      } catch (err) {
-        if (err instanceof AudioErrorExt) {
-          m.setError(err.code, err.message, err.retryable);
-        }
-      }
-    },
-    [getClip, m],
-  );
+  const playClip = useCallback(async (id: string | null) => {
+    const eng = engineRef.current;
+    if (!eng) return;
+    const clip = getClip(id);
+    if (!clip) return;
+    try {
+      await eng.play(clip);
+    } catch (err) {
+      if (err instanceof AudioErrorExt) m.setError(err.code, err.message, err.retryable);
+    }
+  }, [getClip, m]);
 
   const stopPlayback = useCallback(() => {
     engineRef.current?.stopPlayback();
   }, []);
 
-  const submitGuessAndReveal = useCallback(
-    (guess: string) => {
-      m.submitGuess(guess);
-    },
-    [m],
-  );
-
-  const revealWithoutGuess = useCallback(() => {
+  const revealAnswer = useCallback(() => {
     m.revealAnswer();
   }, [m]);
-
-  const selfReport = useCallback(
-    (correct: boolean) => {
-      m.selfReportResult(correct);
-    },
-    [m],
-  );
 
   const retryCurrentRecording = useCallback(async () => {
     const eng = engineRef.current;
@@ -258,21 +210,15 @@ export function GameProvider({ children }: GameProviderProps) {
         safeTransition('recording-original');
         await eng.startRecording();
       } catch (err) {
-        if (err instanceof AudioErrorExt) {
-          m.setError(err.code, err.message, err.retryable);
-        }
+        if (err instanceof AudioErrorExt) m.setError(err.code, err.message, err.retryable);
       }
     } else if (s === 'recording-imitation') {
-      // Imitation mic stream was already granted during the original take —
-      // reuse it directly so retry works even if requestMicrophone is strict.
       safeTransition('listening-to-reversed');
       try {
         await eng.startRecording();
         safeTransition('recording-imitation');
       } catch (err) {
-        if (err instanceof AudioErrorExt) {
-          m.setError(err.code, err.message, err.retryable);
-        }
+        if (err instanceof AudioErrorExt) m.setError(err.code, err.message, err.retryable);
       }
     }
   }, [m, safeTransition]);
@@ -290,9 +236,7 @@ export function GameProvider({ children }: GameProviderProps) {
     clips.clear();
     try {
       if (m.state !== 'idle' && m.canTransition('idle')) m.transition('idle');
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }, [m, clips]);
 
   const ctxError: AudioError | null = m.error;
@@ -310,16 +254,11 @@ export function GameProvider({ children }: GameProviderProps) {
       finishImitation,
       playClip,
       stopPlayback,
-      submitGuessAndReveal,
-      revealWithoutGuess,
-      selfReport,
+      revealAnswer,
       retryCurrentRecording,
       discardAndRestart,
       backHome,
       error: ctxError,
-      replayAllowed: m.replayAllowed.bind(m),
-      incrementPlay: m.incrementPlay.bind(m),
-      resetPlays: m.resetPlays.bind(m),
       clearError: () => m.clearError(),
     }),
     [
@@ -336,9 +275,7 @@ export function GameProvider({ children }: GameProviderProps) {
       finishImitation,
       playClip,
       stopPlayback,
-      submitGuessAndReveal,
-      revealWithoutGuess,
-      selfReport,
+      revealAnswer,
       retryCurrentRecording,
       discardAndRestart,
       backHome,
@@ -351,11 +288,6 @@ export function GameProvider({ children }: GameProviderProps) {
 
 export function useGame() {
   const ctx = useContext(gameContext);
-  if (!ctx) {
-    throw new Error('useGame must be used within a GameProvider');
-  }
+  if (!ctx) throw new Error('useGame must be used within a GameProvider');
   return ctx;
 }
-
-export type { GameConfig, Difficulty, WordMode };
-export { createRound, pickPresetWord };
