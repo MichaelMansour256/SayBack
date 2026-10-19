@@ -35,7 +35,7 @@ export function HomeScreen() {
               // The actual start is wired via the form action below.
               (document.getElementById('start-form') as HTMLFormElement)?.requestSubmit();
             }}
-            className="w-full py-4 px-6 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold text-lg shadow-glow-violet transition-colors"
+            className="w-full py-4 px-6 bg-violet-600 hover:bg-violet-500 rounded-2xl font-bold text-lg shadow-glow-violet transition-colors flex items-center justify-center"
           >
             Start Playing <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
           </button>
@@ -46,7 +46,7 @@ export function HomeScreen() {
 
           <button
             onClick={() => setShowHow(true)}
-            className="w-full py-3.5 px-6 border border-white/20 bg-white/5 rounded-2xl font-medium text-white hover:bg-white/10 transition-colors"
+            className="w-full py-3.5 px-6 border border-white/20 bg-white/5 rounded-2xl font-medium text-white hover:bg-white/10 transition-colors flex items-center justify-center"
           >
             <Info className="h-4 w-4 mr-2" aria-hidden="true" />
             How to Play
