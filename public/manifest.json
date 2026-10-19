@@ -1,0 +1,52 @@
+{
+  "id": "/",
+  "name": "SayBack",
+  "short_name": "SayBack",
+  "description": "Hear it backwards. Say it back! A reverse-audio party game.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "en",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/favicon-32x32.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/favicon-16x16.svg",
+      "sizes": "16x16",
+      "type": "image/svg+xml"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Start Playing",
+      "short_name": "Play",
+      "url": "/game",
+      "description": "Begin a new reverse-audio round",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    }
+  ]
+}
