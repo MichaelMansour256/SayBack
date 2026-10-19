@@ -141,6 +141,19 @@ export function ListenImitateScreen({ stage }: { stage: Stage }) {
                   <Play className="h-5 w-5 mr-2" aria-hidden="true" />
                   Play Reversed Original
                 </Button>
+                <p className="text-xs text-white/60">
+                  Listen as many times as you like, then record Player
+                  B&apos;s imitation of the reversed sound.
+                </p>
+                <Button
+                  onClick={handleRecordImitation}
+                  variant="record"
+                  size="lg"
+                  className="w-full"
+                >
+                  <Mic className="h-5 w-5 mr-2" aria-hidden="true" />
+                  Record Imitation
+                </Button>
               </div>
             )}
 
